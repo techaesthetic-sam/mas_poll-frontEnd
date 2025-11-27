@@ -9,12 +9,15 @@ export default function Layout({ children }: LayoutProps) {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const isHomePage = location.pathname === '/';
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen ${isHomePage ? 'bg-transparent' : 'bg-background'}`}>
       <nav className="border-b border-border bg-card">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="text-2xl font-bold text-foreground">
+            <Link to="/" className="flex items-center gap-2 text-2xl font-bold text-foreground hover:opacity-80 transition-opacity">
+              <img src="/favicon.png" alt="Mas Poll Logo" className="w-8 h-8" />
               Mas Poll
             </Link>
             <div className="flex gap-6">
