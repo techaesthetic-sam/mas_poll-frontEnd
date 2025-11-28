@@ -17,7 +17,9 @@ export default function Home() {
       setLoading(true);
       setError(null);
       const data = await pollService.getAllPolls();
-      setPolls(Array.isArray(data) ? data : []);
+      // Backend returns { polls: [...] }, so extract the polls array
+      const pollsArray = (data as any)?.polls || (Array.isArray(data) ? data : []);
+      setPolls(pollsArray);
     } catch (err) {
       setError('Failed to load polls. Please try again.');
       console.error('Error loading polls:', err);
@@ -66,7 +68,7 @@ export default function Home() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {polls.map((poll) => (
-            <PollCard key={poll.id} poll={poll} />
+            <PollCard key={poll.id} poll={poll} onDelete={loadPolls} />
           ))}
         </div>
       )}

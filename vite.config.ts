@@ -17,8 +17,10 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_POLL_SERVICE_URL || 'http://localhost:8001',
           changeOrigin: true,
           secure: false,
+          // Rewrite: remove /polls prefix if needed, or keep as is
+          // Note: Backend expects /polls, so we keep the path
         },
-        // Option Service (Port 8002)
+        // Option Service (Port 8002) - /options routes
         '/options': {
           target: env.VITE_OPTION_SERVICE_URL || 'http://localhost:8002',
           changeOrigin: true,
