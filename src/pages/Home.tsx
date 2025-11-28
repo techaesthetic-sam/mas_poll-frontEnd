@@ -41,7 +41,7 @@ export default function Home() {
         <div className="text-destructive">{error}</div>
         <button
           onClick={loadPolls}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90"
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-opacity"
         >
           Retry
         </button>

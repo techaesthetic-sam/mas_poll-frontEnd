@@ -87,7 +87,7 @@ export default function CreatePoll() {
             type="text"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Enter poll title"
             required
           />
@@ -101,7 +101,7 @@ export default function CreatePoll() {
             id="description"
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             rows={3}
             placeholder="Enter poll description"
           />
@@ -118,14 +118,14 @@ export default function CreatePoll() {
                   type="text"
                   value={option}
                   onChange={(e) => updateOption(index, e.target.value)}
-                  className="flex-1 px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="flex-1 px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder={`Option ${index + 1}`}
                 />
                 {options.length > 2 && (
                   <button
                     type="button"
                     onClick={() => removeOption(index)}
-                    className="px-4 py-2 text-destructive hover:bg-destructive/10 rounded-md"
+                    className="px-4 py-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-colors"
                   >
                     Remove
                   </button>
@@ -143,7 +143,7 @@ export default function CreatePoll() {
         </div>
 
         {error && (
-          <div className="p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
+          <div className="p-4 bg-destructive/10 border border-destructive rounded-xl text-destructive">
             {error}
           </div>
         )}
@@ -152,14 +152,14 @@ export default function CreatePoll() {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-50"
+            className="px-6 py-2 bg-primary text-primary-foreground rounded-full hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             {loading ? 'Creating...' : 'Create Poll'}
           </button>
           <button
             type="button"
             onClick={() => navigate('/')}
-            className="px-6 py-2 border border-border rounded-md hover:bg-muted"
+            className="px-6 py-2 border border-border rounded-full hover:bg-muted transition-colors"
           >
             Cancel
           </button>

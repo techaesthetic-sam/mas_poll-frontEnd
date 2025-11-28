@@ -44,7 +44,7 @@ export default function Login() {
         </h1>
 
         {error && (
-          <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
+          <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-xl text-destructive">
             {error}
           </div>
         )}
@@ -60,7 +60,7 @@ export default function Login() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -74,14 +74,14 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading || !username || !password}
-            className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-50"
+            className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-full hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             {loading ? 'Please wait...' : isRegister ? 'Register' : 'Login'}
           </button>
