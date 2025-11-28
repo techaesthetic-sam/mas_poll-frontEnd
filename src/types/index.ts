@@ -41,3 +41,19 @@ export interface CreateOptionData {
   text: string;
 }
 
+export interface User {
+  user_id: string;
+  username: string;
+  created_at: string;
+}
+
+export interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+export interface UserVoteStatus {
+  has_voted: boolean;
+  option_id: string | null;
+}
+

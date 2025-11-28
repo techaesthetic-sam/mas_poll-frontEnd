@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { pollService, optionService, voteService } from '../services/apiService';
 import { Poll, Option, PollResult } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function PollDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [poll, setPoll] = useState<Poll | null>(null);
   const [options, setOptions] = useState<Option[]>([]);
   const [results, setResults] = useState<PollResult[]>([]);
@@ -14,6 +16,7 @@ export default function PollDetail() {
   const [voting, setVoting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
+  const [userVotedOptionId, setUserVotedOptionId] = useState<string | null>(null);
   const [optionsError, setOptionsError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,11 +54,21 @@ export default function PollDetail() {
       try {
         const resultsData = await voteService.getPollResults(id);
         setResults(Array.isArray(resultsData) ? resultsData : []);
-        setHasVoted(results.length > 0);
       } catch (err) {
         // Results might not be available yet - this is expected
         console.log('Results not available yet (vote-service not implemented)');
         setResults([]);
+      }
+
+      // Check if user has voted (if authenticated)
+      if (isAuthenticated && user) {
+        try {
+          const voteStatus = await voteService.getUserVoteStatus(id, user.user_id);
+          setHasVoted(voteStatus.has_voted);
+          setUserVotedOptionId(voteStatus.option_id || null);
+        } catch (err) {
+          console.log('Could not check vote status');
+        }
       }
     } catch (err: any) {
       // Only show error if poll itself failed to load
@@ -69,6 +82,19 @@ export default function PollDetail() {
   const handleVote = async () => {
     if (!selectedOption || !id) return;
 
+    // Check if user is authenticated
+    if (!isAuthenticated || !user) {
+      alert('Please login to vote');
+      navigate('/login');
+      return;
+    }
+
+    // Check if user has already voted
+    if (hasVoted) {
+      alert('You have already voted on this poll!');
+      return;
+    }
+
     try {
       setVoting(true);
       setError(null);
@@ -76,15 +102,31 @@ export default function PollDetail() {
       await voteService.submitVote({
         poll_id: id,
         option_id: selectedOption,
+        user_id: user.user_id,
       });
 
-      // Reload results
+      // Reload results and vote status
       const resultsData = await voteService.getPollResults(id);
       setResults(Array.isArray(resultsData) ? resultsData : []);
-      setHasVoted(true);
+      
+      const voteStatus = await voteService.getUserVoteStatus(id, user.user_id);
+      setHasVoted(voteStatus.has_voted);
+      setUserVotedOptionId(voteStatus.option_id || null);
       setSelectedOption('');
+      
+      alert('Vote submitted successfully!');
     } catch (err: any) {
-      setError(err.message || 'Failed to submit vote. Please try again.');
+      const errorMessage = err.message || 'Failed to submit vote. Please try again.';
+      setError(errorMessage);
+      if (errorMessage.includes('already voted')) {
+        alert('You have already voted on this poll!');
+        // Reload vote status
+        if (user) {
+          const voteStatus = await voteService.getUserVoteStatus(id, user.user_id);
+          setHasVoted(voteStatus.has_voted);
+          setUserVotedOptionId(voteStatus.option_id || null);
+        }
+      }
       console.error('Error voting:', err);
     } finally {
       setVoting(false);
@@ -199,6 +241,11 @@ export default function PollDetail() {
         {!poll.closed && !hasVoted && (
           <div className="space-y-4 mb-6">
             <h2 className="text-xl font-semibold text-foreground">Cast Your Vote</h2>
+            {!isAuthenticated && (
+              <div className="p-4 bg-yellow-500/10 border border-yellow-500 rounded-md text-yellow-600 dark:text-yellow-400">
+                Please login to vote on this poll.
+              </div>
+            )}
             {options.length > 0 ? (
               <>
                 <div className="space-y-2">
@@ -209,14 +256,22 @@ export default function PollDetail() {
                         selectedOption === option.id
                           ? 'border-primary bg-primary/5'
                           : 'border-border hover:border-primary/50'
-                      }`}
+                      } ${!isAuthenticated ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <input
                         type="radio"
                         name="option"
                         value={option.id}
                         checked={selectedOption === option.id}
-                        onChange={(e) => setSelectedOption(e.target.value)}
+                        onChange={(e) => {
+                          if (isAuthenticated) {
+                            setSelectedOption(e.target.value);
+                          } else {
+                            alert('Please login to vote');
+                            navigate('/login');
+                          }
+                        }}
+                        disabled={!isAuthenticated}
                         className="mr-3"
                       />
                       <span className="text-foreground">{option.text}</span>
@@ -225,10 +280,10 @@ export default function PollDetail() {
                 </div>
                 <button
                   onClick={handleVote}
-                  disabled={!selectedOption || voting}
+                  disabled={!selectedOption || voting || !isAuthenticated}
                   className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-50"
                 >
-                  {voting ? 'Submitting...' : 'Submit Vote'}
+                  {voting ? 'Submitting...' : isAuthenticated ? 'Submit Vote' : 'Login to Vote'}
                 </button>
               </>
             ) : (
@@ -272,8 +327,13 @@ export default function PollDetail() {
         )}
 
         {hasVoted && !poll.closed && (
-          <div className="mt-4 p-4 bg-muted rounded-md text-sm text-muted-foreground">
-            You have already voted on this poll.
+          <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500 rounded-md text-blue-600 dark:text-blue-400">
+            <strong>You have already voted on this poll.</strong>
+            {userVotedOptionId && (
+              <p className="mt-2 text-sm">
+                You voted for: {options.find(opt => opt.id === userVotedOptionId)?.text || 'Unknown option'}
+              </p>
+            )}
           </div>
         )}
       </div>

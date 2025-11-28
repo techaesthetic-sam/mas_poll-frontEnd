@@ -104,7 +104,9 @@ export const pollService = {
 
   // Delete a poll
   deletePoll: async (pollId: string) => {
-    return apiRequest(config.api.pollById(pollId), {
+    // Use full URL to route to poll-service (port 8001)
+    const url = `${config.pollServiceUrl}${config.api.pollById(pollId)}`;
+    return apiRequest(url, {
       method: 'DELETE',
     });
   },
@@ -173,7 +175,14 @@ export const voteService = {
   getPollResults: async (pollId: string) => {
     // Use full URL to route to vote-service (port 8003)
     const url = `${config.voteServiceUrl}${config.api.pollResults(pollId)}`;
-    return apiRequest(url);
+    const response = await apiRequest<{ poll_id: string; results: Array<{ option_id: string; text: string; votes: number }> }>(url);
+    // Transform to match frontend type
+    return (response?.results || []).map((result) => ({
+      poll_id: response.poll_id,
+      option_id: result.option_id,
+      option_text: result.text,
+      vote_count: result.votes,
+    }));
   },
 
   // Get today's vote count
@@ -189,10 +198,40 @@ export const voteService = {
     const url = `${config.voteServiceUrl}${config.api.analyticsTop}`;
     return apiRequest(url);
   },
+
+  // Check if user has voted on a poll
+  getUserVoteStatus: async (pollId: string, userId: string) => {
+    const url = `${config.voteServiceUrl}${config.api.userVoteStatus(pollId, userId)}`;
+    return apiRequest<{ has_voted: boolean; option_id: string | null }>(url);
+  },
+};
+
+/**
+ * Auth Service API (Port 8003 - same as vote-service)
+ */
+export const authService = {
+  // Register a new user
+  register: async (credentials: { username: string; password: string }) => {
+    const url = `${config.voteServiceUrl}${config.api.register}`;
+    return apiRequest<{ user_id: string; username: string; created_at: string }>(url, {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  },
+
+  // Login user
+  login: async (credentials: { username: string; password: string }) => {
+    const url = `${config.voteServiceUrl}${config.api.login}`;
+    return apiRequest<{ user_id: string; username: string; created_at: string }>(url, {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  },
 };
 
 export default {
   pollService,
   optionService,
   voteService,
+  authService,
 };

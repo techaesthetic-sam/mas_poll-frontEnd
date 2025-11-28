@@ -48,6 +48,11 @@ export const config = {
     pollResults: (pollId: string) => `/polls/${pollId}/results`,
     analyticsToday: '/analytics/today',
     analyticsTop: '/analytics/top',
+    
+    // Auth endpoints
+    register: '/auth/register',
+    login: '/auth/login',
+    userVoteStatus: (pollId: string, userId: string) => `/polls/${pollId}/user/${userId}/status`,
   },
 };
 
