@@ -14,6 +14,7 @@ export default function PollDetail() {
   const [voting, setVoting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -27,25 +28,37 @@ export default function PollDetail() {
     try {
       setLoading(true);
       setError(null);
+      setOptionsError(null); // Clear options error
 
       // Load poll
-      const pollData = await pollService.getPollById(id);
+      const pollData = await pollService.getPollById(id) as Poll;
       setPoll(pollData);
 
-      // Load options
-      const optionsData = await optionService.getPollOptions(id);
-      setOptions(optionsData);
+      // Load options (if option-service is available)
+      try {
+        const optionsData = await optionService.getPollOptions(id);
+        setOptions(Array.isArray(optionsData) ? optionsData : []);
+        setOptionsError(null); // Clear error on success
+      } catch (optionErr: any) {
+        // Option service not available yet - show empty options
+        // Don't show error to user, just log it
+        console.warn('Option service not available (this is expected until service is implemented):', optionErr.message);
+        setOptions([]);
+        // Don't set error state - this is expected behavior
+      }
 
-      // Load results
+      // Load results (if vote-service is available)
       try {
         const resultsData = await voteService.getPollResults(id);
         setResults(Array.isArray(resultsData) ? resultsData : []);
         setHasVoted(results.length > 0);
       } catch (err) {
-        // Results might not be available yet
-        console.log('Results not available yet');
+        // Results might not be available yet - this is expected
+        console.log('Results not available yet (vote-service not implemented)');
+        setResults([]);
       }
     } catch (err: any) {
+      // Only show error if poll itself failed to load
       setError(err.message || 'Failed to load poll. Please try again.');
       console.error('Error loading poll:', err);
     } finally {
@@ -89,6 +102,23 @@ export default function PollDetail() {
     } catch (err: any) {
       setError(err.message || 'Failed to close poll.');
       console.error('Error closing poll:', err);
+    }
+  };
+
+  const handleDeletePoll = async () => {
+    if (!id) return;
+
+    if (!window.confirm('Are you sure you want to delete this poll? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await pollService.deletePoll(id);
+      // Navigate back to home after successful deletion
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete poll.');
+      console.error('Error deleting poll:', err);
     }
   };
 
@@ -137,20 +167,29 @@ export default function PollDetail() {
               <p className="text-muted-foreground">{poll.description}</p>
             )}
           </div>
-          {poll.closed ? (
-            <span className="px-3 py-1 text-sm font-medium bg-muted text-muted-foreground rounded">
-              Closed
-            </span>
-          ) : (
+          <div className="flex gap-2">
+            {poll.closed ? (
+              <span className="px-3 py-1 text-sm font-medium bg-muted text-muted-foreground rounded">
+                Closed
+              </span>
+            ) : (
+              <button
+                onClick={handleClosePoll}
+                className="px-3 py-1 text-sm font-medium text-destructive hover:bg-destructive/10 rounded"
+              >
+                Close Poll
+              </button>
+            )}
             <button
-              onClick={handleClosePoll}
-              className="px-3 py-1 text-sm font-medium text-destructive hover:bg-destructive/10 rounded"
+              onClick={handleDeletePoll}
+              className="px-3 py-1 text-sm font-medium text-destructive hover:bg-destructive/10 rounded border border-destructive"
             >
-              Close Poll
+              Delete Poll
             </button>
-          )}
+          </div>
         </div>
 
+        {/* Only show error if poll loading failed, not for missing services */}
         {error && (
           <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
             {error}
@@ -160,35 +199,43 @@ export default function PollDetail() {
         {!poll.closed && !hasVoted && (
           <div className="space-y-4 mb-6">
             <h2 className="text-xl font-semibold text-foreground">Cast Your Vote</h2>
-            <div className="space-y-2">
-              {options.map((option) => (
-                <label
-                  key={option.id}
-                  className={`flex items-center p-4 border-2 rounded-md cursor-pointer transition-colors ${
-                    selectedOption === option.id
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50'
-                  }`}
+            {options.length > 0 ? (
+              <>
+                <div className="space-y-2">
+                  {options.map((option) => (
+                    <label
+                      key={option.id}
+                      className={`flex items-center p-4 border-2 rounded-md cursor-pointer transition-colors ${
+                        selectedOption === option.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="option"
+                        value={option.id}
+                        checked={selectedOption === option.id}
+                        onChange={(e) => setSelectedOption(e.target.value)}
+                        className="mr-3"
+                      />
+                      <span className="text-foreground">{option.text}</span>
+                    </label>
+                  ))}
+                </div>
+                <button
+                  onClick={handleVote}
+                  disabled={!selectedOption || voting}
+                  className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-50"
                 >
-                  <input
-                    type="radio"
-                    name="option"
-                    value={option.id}
-                    checked={selectedOption === option.id}
-                    onChange={(e) => setSelectedOption(e.target.value)}
-                    className="mr-3"
-                  />
-                  <span className="text-foreground">{option.text}</span>
-                </label>
-              ))}
-            </div>
-            <button
-              onClick={handleVote}
-              disabled={!selectedOption || voting}
-              className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-50"
-            >
-              {voting ? 'Submitting...' : 'Submit Vote'}
-            </button>
+                  {voting ? 'Submitting...' : 'Submit Vote'}
+                </button>
+              </>
+            ) : (
+              <div className="p-4 bg-muted rounded-md text-sm text-muted-foreground">
+                No options available yet. Options will appear here once the option-service is implemented.
+              </div>
+            )}
           </div>
         )}
 

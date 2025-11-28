@@ -17,7 +17,7 @@ export default function Home() {
       setLoading(true);
       setError(null);
       const data = await pollService.getAllPolls();
-      // getAllPolls now returns an array directly
+      // getAllPolls now returns an array directly (already transformed in apiService)
       setPolls(data);
     } catch (err) {
       setError('Failed to load polls. Please try again.');
@@ -67,7 +67,7 @@ export default function Home() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {polls.map((poll) => (
-            <PollCard key={poll.id} poll={poll} />
+            <PollCard key={poll.id} poll={poll} onDelete={loadPolls} />
           ))}
         </div>
       )}

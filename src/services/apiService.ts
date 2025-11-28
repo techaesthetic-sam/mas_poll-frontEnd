@@ -5,10 +5,14 @@ import config from '../config/environment';
  */
 export const apiRequest = async <T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  baseUrl?: string
 ): Promise<T> => {
   try {
-    const response = await fetch(endpoint, {
+    // Use full URL if baseUrl provided, otherwise use relative (for proxy)
+    const url = baseUrl ? `${baseUrl}${endpoint}` : endpoint;
+    
+    const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -20,7 +24,21 @@ export const apiRequest = async <T>(
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    return await response.json();
+    // Handle 204 No Content (DELETE requests) - no response body
+    if (response.status === 204) {
+      return null as T;
+    }
+
+    // Check if response has content to parse
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const text = await response.text();
+      // Return null if empty body, otherwise parse JSON
+      return text ? JSON.parse(text) : null as T;
+    }
+
+    // For non-JSON responses, return null
+    return null as T;
   } catch (error: any) {
     console.error('API request error:', error);
     throw error;
@@ -83,6 +101,13 @@ export const pollService = {
       method: 'PATCH',
     });
   },
+
+  // Delete a poll
+  deletePoll: async (pollId: string) => {
+    return apiRequest(config.api.pollById(pollId), {
+      method: 'DELETE',
+    });
+  },
 };
 
 /**
@@ -98,7 +123,7 @@ export const optionService = {
     const url = `${config.optionServiceUrl}${config.api.pollOptions(pollId)}`;
     const response = await apiRequest<{ options: any[] }>(url);
     // Backend returns { options: [...] }, extract and transform
-    return (response.options || []).map((option: any) => ({
+    return (response?.options || []).map((option: any) => ({
       id: option.option_id || option.id,
       poll_id: option.poll_id,
       text: option.text,
