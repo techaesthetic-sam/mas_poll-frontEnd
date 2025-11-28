@@ -17,7 +17,8 @@ export default function Home() {
       setLoading(true);
       setError(null);
       const data = await pollService.getAllPolls();
-      setPolls(Array.isArray(data) ? data : []);
+      // getAllPolls now returns an array directly
+      setPolls(data);
     } catch (err) {
       setError('Failed to load polls. Please try again.');
       console.error('Error loading polls:', err);

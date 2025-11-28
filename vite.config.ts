@@ -11,31 +11,8 @@ export default defineConfig(({ mode }) => {
     server: {
       host: "::",
       port: 5173, // Vite default port as per project documentation
-      proxy: {
-        // Poll Service (Port 8001)
-        '/polls': {
-          target: env.VITE_POLL_SERVICE_URL || 'http://localhost:8001',
-          changeOrigin: true,
-          secure: false,
-        },
-        // Option Service (Port 8002)
-        '/options': {
-          target: env.VITE_OPTION_SERVICE_URL || 'http://localhost:8002',
-          changeOrigin: true,
-          secure: false,
-        },
-        // Vote Service (Port 8003)
-        '/vote': {
-          target: env.VITE_VOTE_SERVICE_URL || 'http://localhost:8003',
-          changeOrigin: true,
-          secure: false,
-        },
-        '/analytics': {
-          target: env.VITE_VOTE_SERVICE_URL || 'http://localhost:8003',
-          changeOrigin: true,
-          secure: false,
-        },
-      }
+      // Proxy removed - frontend uses full URLs (http://localhost:8001, etc.)
+      // This prevents proxy from intercepting frontend routes like /polls/{id}
     },
     plugins: [
       react(),

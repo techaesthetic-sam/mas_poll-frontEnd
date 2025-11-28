@@ -37,17 +37,39 @@ export const apiRequest = async <T>(
 export const pollService = {
   // Get all polls
   getAllPolls: async () => {
-    return apiRequest(config.api.polls);
+    // Use full URL to route to poll-service (port 8001)
+    const url = `${config.pollServiceUrl}${config.api.polls}`;
+    const response = await apiRequest<{ polls: any[] }>(url);
+    // Backend returns { polls: [...] }, extract and transform
+    return (response.polls || []).map((poll: any) => ({
+      id: poll.poll_id || poll.id,
+      title: poll.title,
+      description: poll.description,
+      created_at: poll.created_at,
+      closed: poll.is_closed ?? poll.closed ?? false,
+    }));
   },
 
   // Get a specific poll by ID
   getPollById: async (pollId: string) => {
-    return apiRequest(config.api.pollById(pollId));
+    // Use full URL to route to poll-service (port 8001)
+    const url = `${config.pollServiceUrl}${config.api.pollById(pollId)}`;
+    const poll = await apiRequest<any>(url);
+    // Transform to match frontend type
+    return {
+      id: poll.poll_id || poll.id,
+      title: poll.title,
+      description: poll.description,
+      created_at: poll.created_at,
+      closed: poll.is_closed ?? poll.closed ?? false,
+    };
   },
 
   // Create a new poll
   createPoll: async (pollData: any) => {
-    return apiRequest(config.api.polls, {
+    // Use full URL to route to poll-service (port 8001)
+    const url = `${config.pollServiceUrl}${config.api.polls}`;
+    return apiRequest(url, {
       method: 'POST',
       body: JSON.stringify(pollData),
     });
@@ -55,7 +77,9 @@ export const pollService = {
 
   // Close a poll
   closePoll: async (pollId: string) => {
-    return apiRequest(config.api.closePoll(pollId), {
+    // Use full URL to route to poll-service (port 8001)
+    const url = `${config.pollServiceUrl}${config.api.closePoll(pollId)}`;
+    return apiRequest(url, {
       method: 'PATCH',
     });
   },
@@ -70,12 +94,23 @@ export const pollService = {
 export const optionService = {
   // Get all options for a poll
   getPollOptions: async (pollId: string) => {
-    return apiRequest(config.api.pollOptions(pollId));
+    // Use full URL to route to option-service (port 8002)
+    const url = `${config.optionServiceUrl}${config.api.pollOptions(pollId)}`;
+    const response = await apiRequest<{ options: any[] }>(url);
+    // Backend returns { options: [...] }, extract and transform
+    return (response.options || []).map((option: any) => ({
+      id: option.option_id || option.id,
+      poll_id: option.poll_id,
+      text: option.text,
+      created_at: option.created_at,
+    }));
   },
 
   // Add an option to a poll
   addOption: async (pollId: string, optionData: any) => {
-    return apiRequest(config.api.pollOptions(pollId), {
+    // Use full URL to route to option-service (port 8002)
+    const url = `${config.optionServiceUrl}${config.api.pollOptions(pollId)}`;
+    return apiRequest(url, {
       method: 'POST',
       body: JSON.stringify(optionData),
     });
@@ -83,7 +118,9 @@ export const optionService = {
 
   // Delete an option
   deleteOption: async (optionId: string) => {
-    return apiRequest(config.api.optionById(optionId), {
+    // Use full URL to route to option-service (port 8002)
+    const url = `${config.optionServiceUrl}${config.api.optionById(optionId)}`;
+    return apiRequest(url, {
       method: 'DELETE',
     });
   },
@@ -99,7 +136,9 @@ export const optionService = {
 export const voteService = {
   // Submit a vote
   submitVote: async (voteData: any) => {
-    return apiRequest(config.api.vote, {
+    // Use full URL to route to vote-service (port 8003)
+    const url = `${config.voteServiceUrl}${config.api.vote}`;
+    return apiRequest(url, {
       method: 'POST',
       body: JSON.stringify(voteData),
     });
@@ -107,17 +146,23 @@ export const voteService = {
 
   // Get results for a poll
   getPollResults: async (pollId: string) => {
-    return apiRequest(config.api.pollResults(pollId));
+    // Use full URL to route to vote-service (port 8003)
+    const url = `${config.voteServiceUrl}${config.api.pollResults(pollId)}`;
+    return apiRequest(url);
   },
 
   // Get today's vote count
   getTodayAnalytics: async () => {
-    return apiRequest(config.api.analyticsToday);
+    // Use full URL to route to vote-service (port 8003)
+    const url = `${config.voteServiceUrl}${config.api.analyticsToday}`;
+    return apiRequest(url);
   },
 
   // Get most voted poll
   getTopPoll: async () => {
-    return apiRequest(config.api.analyticsTop);
+    // Use full URL to route to vote-service (port 8003)
+    const url = `${config.voteServiceUrl}${config.api.analyticsTop}`;
+    return apiRequest(url);
   },
 };
 

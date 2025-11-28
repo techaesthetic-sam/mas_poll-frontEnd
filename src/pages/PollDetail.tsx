@@ -34,7 +34,7 @@ export default function PollDetail() {
 
       // Load options
       const optionsData = await optionService.getPollOptions(id);
-      setOptions(Array.isArray(optionsData) ? optionsData : []);
+      setOptions(optionsData);
 
       // Load results
       try {
