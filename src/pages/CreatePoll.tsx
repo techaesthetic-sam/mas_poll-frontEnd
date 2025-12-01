@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { pollService, optionService } from '../services/apiService';
-import { CreatePollData, CreateOptionData } from '../types';
+import { CreatePollData, CreateOptionData, Poll } from '../types';
 
 export default function CreatePoll() {
   const navigate = useNavigate();
@@ -38,7 +38,7 @@ export default function CreatePoll() {
       // Note: This will fail gracefully if option-service is not yet implemented
       try {
         for (const optionText of validOptions) {
-          await optionService.addOption(poll.id, { text: optionText.trim() });
+          await optionService.addOption((poll as Poll).id, { text: optionText.trim() });
         }
       } catch (optionError: any) {
         // Option service not available yet - poll is still created successfully
@@ -47,7 +47,7 @@ export default function CreatePoll() {
       }
 
       // Navigate to poll detail page (poll was created successfully)
-      navigate(`/polls/${poll.id}`);
+      navigate(`/polls/${(poll as Poll).id}`);
     } catch (err: any) {
       // Only show error if poll creation itself failed
       setError(err.message || 'Failed to create poll. Please try again.');
